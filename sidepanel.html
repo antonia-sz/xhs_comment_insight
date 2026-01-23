@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小红书评论洞察助手</title>
+  <link rel="stylesheet" href="sidepanel.css">
+  <!-- 引入 marked.js 用于 Markdown 渲染（本地文件） -->
+  <script src="lib/marked.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>📝 小红书评论总结</h1>
+      <p class="subtitle">DeepSeek · AI分析</p>
+    </header>
+
+    <!-- 按钮区域 -->
+    <div class="button-section">
+      <button id="extractTitle" class="btn btn-primary btn-full" disabled>
+        📌 笔记标题
+      </button>
+      <div class="btn-row">
+        <button id="extractComments" class="btn btn-secondary" disabled>
+          💎 精华评论
+        </button>
+        <button id="startSummary" class="btn btn-secondary" disabled>
+          📊 评论汇总
+        </button>
+      </div>
+    </div>
+
+    <!-- 提示信息 -->
+    <div class="hint-section">
+      <p id="hintText" class="hint-text"></p>
+    </div>
+
+    <!-- 内容展示区域 -->
+    <div class="content-section">
+      <!-- 标题展示 -->
+      <div id="titleResult" class="result-block hidden">
+        <h3>笔记标题</h3>
+        <div id="titleContent" class="result-content"></div>
+      </div>
+
+      <!-- 精华评论展示 -->
+      <div id="commentsResult" class="result-block hidden">
+        <h3>精华评论</h3>
+        <div id="commentsContent" class="result-content markdown-body"></div>
+      </div>
+
+      <!-- 评论汇总展示 -->
+      <div id="summaryResult" class="result-block hidden">
+        <h3>评论汇总</h3>
+        <div id="summaryContent" class="result-content markdown-body"></div>
+      </div>
+
+      <!-- 加载状态 -->
+      <div id="loadingSection" class="loading-section hidden">
+        <div class="loading-spinner"></div>
+        <p>正在思考中……</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 配置文件（包含 API Key） -->
+  <script src="config.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+</html>

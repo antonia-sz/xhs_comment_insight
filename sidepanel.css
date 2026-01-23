@@ -1,0 +1,496 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);
+  min-height: 100vh;
+  color: #333;
+}
+
+.container {
+  padding: 16px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* 头部样式 */
+.header {
+  text-align: center;
+  padding: 12px 0 16px;
+  border-bottom: 1px solid #ffe0e0;
+  margin-bottom: 16px;
+}
+
+.header h1 {
+  font-size: 18px;
+  color: #ff4757;
+  font-weight: 600;
+}
+
+.header .subtitle {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+/* API Key 设置区域 */
+.api-key-section {
+  background: #fff;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.1);
+  overflow: hidden;
+}
+
+.api-key-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+  transition: background 0.2s;
+}
+
+.api-key-header:hover {
+  background: #fafafa;
+}
+
+.toggle-icon {
+  font-size: 12px;
+  transition: transform 0.3s;
+}
+
+.toggle-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.api-key-content {
+  display: none;
+  padding: 0 16px 16px;
+  gap: 8px;
+}
+
+.api-key-content.show {
+  display: flex;
+}
+
+.api-key-content input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.api-key-content input:focus {
+  border-color: #ff4757;
+}
+
+.btn-small {
+  padding: 8px 16px;
+  background: #ff4757;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-small:hover {
+  background: #ff3344;
+}
+
+/* 按钮区域 */
+.button-section {
+  margin-bottom: 12px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-full {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ff4757 0%, #ff6b7a 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(255, 71, 87, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 71, 87, 0.4);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #ff4757;
+  border: 1px solid #ff4757;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #fff5f5;
+}
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-row .btn {
+  flex: 1;
+}
+
+/* 提示信息 */
+.hint-section {
+  min-height: 24px;
+  margin-bottom: 12px;
+}
+
+.hint-text {
+  font-size: 13px;
+  color: #999;
+  text-align: center;
+}
+
+.hint-text.error {
+  color: #ff4757;
+}
+
+/* 内容展示区域 */
+.content-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  min-height: 200px;
+}
+
+.result-block {
+  margin-bottom: 20px;
+}
+
+.result-block:last-child {
+  margin-bottom: 0;
+}
+
+.result-block h3 {
+  font-size: 14px;
+  color: #ff4757;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ffe0e0;
+}
+
+.result-content {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #444;
+  word-break: break-word;
+}
+
+/* Markdown 样式 */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.markdown-body h1 { font-size: 18px; }
+.markdown-body h2 { font-size: 16px; }
+.markdown-body h3 { font-size: 14px; }
+
+.markdown-body p {
+  margin-bottom: 10px;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 20px;
+  margin-bottom: 10px;
+}
+
+.markdown-body li {
+  margin-bottom: 4px;
+}
+
+.markdown-body strong {
+  font-weight: 600;
+  color: #ff4757;
+}
+
+.markdown-body code {
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid #ff4757;
+  padding-left: 12px;
+  margin: 10px 0;
+  color: #666;
+}
+
+/* 加载状态 */
+.loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #ffe0e0;
+  border-top-color: #ff4757;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 隐藏类 */
+.hidden {
+  display: none !important;
+}
+
+/* 流式输出光标效果 */
+.streaming-cursor::after {
+  content: '▋';
+  animation: blink 1s infinite;
+  color: #ff4757;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* 精华评论卡片样式 */
+.comment-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comment-card {
+  padding: 14px;
+  border-radius: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.comment-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.comment-card-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.comment-card-content {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.comment-card-value {
+  font-size: 12px;
+  color: #888;
+  padding-top: 8px;
+  border-top: 1px dashed #e0e0e0;
+}
+
+/* 评论汇总卡片样式 */
+.summary-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.summary-card {
+  padding: 14px;
+  border-radius: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.summary-card-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.summary-card-content {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #444;
+}
+
+.summary-card-content p {
+  margin-bottom: 8px;
+}
+
+.summary-card-content p:last-child {
+  margin-bottom: 0;
+}
+
+.summary-card-content strong {
+  color: #ff4757;
+  font-weight: 600;
+}
+
+.summary-card-content ul,
+.summary-card-content ol {
+  padding-left: 18px;
+  margin: 8px 0;
+}
+
+.summary-card-content li {
+  margin-bottom: 4px;
+}
+
+/* 内容总结 Markdown 增强样式 */
+.result-content h1,
+.result-content h2,
+.result-content h3,
+.result-content h4 {
+  color: #333;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.result-content h1:first-child,
+.result-content h2:first-child,
+.result-content h3:first-child {
+  margin-top: 0;
+}
+
+.result-content h1 { font-size: 17px; }
+.result-content h2 { font-size: 15px; }
+.result-content h3 { font-size: 14px; }
+.result-content h4 { font-size: 14px; }
+
+.result-content p {
+  margin-bottom: 8px;
+  line-height: 1.6;
+  color: #444;
+}
+
+.result-content p:empty {
+  display: none;
+}
+
+.result-content ul,
+.result-content ol {
+  padding-left: 18px;
+  margin-bottom: 8px;
+  margin-top: 4px;
+}
+
+.result-content li {
+  margin-bottom: 4px;
+  line-height: 1.5;
+  color: #444;
+}
+
+.result-content strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.result-content em {
+  color: #555;
+  font-style: italic;
+}
+
+.result-content blockquote {
+  border-left: 3px solid #ddd;
+  padding-left: 12px;
+  margin: 8px 0;
+  color: #666;
+  background: #fafafa;
+  padding: 8px 12px;
+  border-radius: 0 6px 6px 0;
+}
+
+.result-content hr {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 12px 0;
+}
+
+.result-content br + br {
+  display: none;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ffb3b3;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff4757;
+}
