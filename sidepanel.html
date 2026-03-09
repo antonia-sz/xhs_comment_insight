@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="sidepanel.css">
   <!-- 引入 marked.js 用于 Markdown 渲染（本地文件） -->
   <script src="lib/marked.min.js"></script>
+  <!-- 引入 SheetJS 用于导出 Excel -->
+  <script src="lib/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -60,6 +62,13 @@
         <div class="loading-spinner"></div>
         <p>正在思考中……</p>
       </div>
+    </div>
+
+    <!-- 导出区域 -->
+    <div id="exportSection" class="export-section hidden">
+      <button id="exportAllBtn" class="btn btn-export btn-full">
+        📥 导出分析结果为 Excel
+      </button>
     </div>
   </div>
 

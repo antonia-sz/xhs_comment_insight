@@ -13,10 +13,13 @@ const commentsContent = document.getElementById('commentsContent');
 const summaryResult = document.getElementById('summaryResult');
 const summaryContent = document.getElementById('summaryContent');
 const loadingSection = document.getElementById('loadingSection');
+const exportAllBtn = document.getElementById('exportAllBtn');
+const exportSection = document.getElementById('exportSection');
 
 // 存储提取的数据
 let extractedTitle = '';
 let extractedComments = [];
+let lastExportData = null; // 存储可导出的分析结果
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
@@ -27,18 +30,15 @@ document.addEventListener('DOMContentLoaded', () => {
 // 确保 content script 已注入
 async function ensureContentScriptInjected(tabId) {
   try {
-    // 先尝试发送测试消息
     return new Promise((resolve) => {
       chrome.tabs.sendMessage(tabId, { action: 'ping' }, (response) => {
         if (chrome.runtime.lastError || !response) {
           console.log('Content script 未注入，正在注入...');
-          // 注入 content script
           chrome.scripting.executeScript({
             target: { tabId: tabId },
             files: ['content.js']
           }).then(() => {
             console.log('Content script 注入成功');
-            // 等待一小段时间让脚本初始化
             setTimeout(() => resolve(true), 100);
           }).catch((err) => {
             console.error('Content script 注入失败:', err);
@@ -115,12 +115,20 @@ function setLoading(isLoading) {
   }
 }
 
+// 显示/隐藏导出按钮
+function updateExportButton() {
+  if (lastExportData && (lastExportData.comments || lastExportData.summary)) {
+    exportSection.classList.remove('hidden');
+  } else {
+    exportSection.classList.add('hidden');
+  }
+}
+
 // 提取标题按钮点击事件
 extractTitleBtn.addEventListener('click', async () => {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
-    // 确保 content script 已注入
     const injected = await ensureContentScriptInjected(tab.id);
     if (!injected) {
       showHint('请刷新页面后重试', true);
@@ -146,6 +154,12 @@ extractTitleBtn.addEventListener('click', async () => {
     titleContent.textContent = extractedTitle;
     titleResult.classList.remove('hidden');
     showHint('', false);
+
+    // 同步到导出数据
+    if (!lastExportData) lastExportData = {};
+    lastExportData.title = extractedTitle;
+    lastExportData.analysisTime = new Date().toISOString();
+
   } catch (error) {
     console.error('提取标题失败:', error);
     showHint('提取标题失败', true);
@@ -153,22 +167,22 @@ extractTitleBtn.addEventListener('click', async () => {
 });
 
 // 精华评论按钮点击事件
+// 从前 20 条评论中筛选 3 条最有价值的（请求 21 条，第1条为正文跳过）
 extractCommentsBtn.addEventListener('click', async () => {
   console.log('精华评论按钮被点击');
   
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
-    // 确保 content script 已注入
     const injected = await ensureContentScriptInjected(tab.id);
     if (!injected) {
       showHint('请刷新页面后重试', true);
       return;
     }
     
-    // 使用 Promise 包装 sendMessage（请求11条，跳过正文后得到10条）
+    // 请求21条，跳过第1条正文后得到20条评论
     const response = await new Promise((resolve) => {
-      chrome.tabs.sendMessage(tab.id, { action: 'extractComments', limit: 11 }, resolve);
+      chrome.tabs.sendMessage(tab.id, { action: 'extractComments', limit: 21 }, resolve);
     });
     
     console.log('extractComments 响应:', response);
@@ -220,8 +234,16 @@ ${extractedComments.map((c, i) => `${i + 1}. ${c}`).join('\n')}
 }`;
 
     console.log('准备调用 API...');
-    await callAPIForComments(prompt, commentsContent);
+    const commentResult = await callAPIForComments(prompt, commentsContent);
     console.log('API 调用完成');
+
+    // 保存精华评论到导出数据
+    if (!lastExportData) lastExportData = {};
+    lastExportData.title = extractedTitle;
+    lastExportData.analysisTime = new Date().toISOString();
+    if (commentResult) lastExportData.comments = commentResult;
+    updateExportButton();
+
     setLoading(false);
     showHint('精华评论提取完成 ✓', false);
     
@@ -239,14 +261,13 @@ startSummaryBtn.addEventListener('click', async () => {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
-    // 确保 content script 已注入
     const injected = await ensureContentScriptInjected(tab.id);
     if (!injected) {
       showHint('请刷新页面后重试', true);
       return;
     }
     
-    // 使用 Promise 包装 sendMessage（请求51条，跳过正文后得到50条）
+    // 请求51条，跳过正文后得到50条
     const response = await new Promise((resolve) => {
       chrome.tabs.sendMessage(tab.id, { action: 'extractComments', limit: 51 }, resolve);
     });
@@ -305,6 +326,14 @@ ${allComments.map((c, i) => `${i + 1}. ${c}`).join('\n')}
     console.log('准备调用 API...');
     await streamAPICall(prompt, summaryContent);
     console.log('API 调用完成');
+
+    // 保存汇总文本到导出数据
+    if (!lastExportData) lastExportData = {};
+    lastExportData.title = extractedTitle;
+    lastExportData.analysisTime = new Date().toISOString();
+    lastExportData.summary = summaryContent.innerText || summaryContent.textContent || '';
+    updateExportButton();
+
     setLoading(false);
     showHint('评论汇总完成 ✓', false);
     
@@ -315,13 +344,96 @@ ${allComments.map((c, i) => `${i + 1}. ${c}`).join('\n')}
   }
 });
 
-// 精华评论专用 API 调用（返回色块卡片）
+// ============================================================
+// 导出 Excel
+// ============================================================
+exportAllBtn.addEventListener('click', () => {
+  if (!lastExportData) {
+    showHint('暂无可导出的分析结果', true);
+    return;
+  }
+
+  try {
+    const rows = [];
+
+    // 基础信息行
+    rows.push(['笔记标题', lastExportData.title || '']);
+    rows.push(['分析时间', lastExportData.analysisTime
+      ? new Date(lastExportData.analysisTime).toLocaleString('zh-CN')
+      : '']);
+    rows.push([]); // 空行分隔
+
+    // 精华评论
+    if (lastExportData.comments && lastExportData.comments.length > 0) {
+      rows.push(['精华评论', '评论内容', '价值点']);
+      lastExportData.comments.forEach((c, i) => {
+        rows.push([`精华评论 ${i + 1}`, c.content || '', c.value || '']);
+      });
+      rows.push([]); // 空行分隔
+    }
+
+    // 评论汇总
+    if (lastExportData.summary) {
+      rows.push(['评论汇总分析']);
+      // 按行拆分，每行一个单元格
+      lastExportData.summary.split('\n').forEach(line => {
+        if (line.trim()) rows.push([line.trim()]);
+      });
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+
+    // 设置列宽
+    ws['!cols'] = [
+      { wch: 18 },
+      { wch: 50 },
+      { wch: 30 }
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '评论分析');
+
+    // 文件名
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const titlePart = (lastExportData.title || '笔记')
+      .slice(0, 20)
+      .replace(/[\\/:*?"<>|]/g, '');
+    const fileName = `评论分析_${dateStr}_${titlePart}.xlsx`;
+
+    // 生成并下载
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+
+    chrome.downloads.download({ url, filename: fileName, saveAs: true }, (downloadId) => {
+      if (chrome.runtime.lastError) {
+        // 降级方案
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    });
+
+    showHint('Excel 已导出 ✓', false);
+  } catch (error) {
+    console.error('导出失败:', error);
+    showHint('导出失败: ' + error.message, true);
+  }
+});
+
+// ============================================================
+// 精华评论专用 API 调用（返回色块卡片，并返回结构化数据）
+// ============================================================
 async function callAPIForComments(userPrompt, targetElement) {
   console.log('=== 精华评论 API 调用开始 ===');
   
   if (!API_KEY || API_KEY === '在这里填入你的API_KEY') {
     targetElement.innerHTML = '<p style="color: #ff4757;">请配置 API Key</p>';
-    return;
+    return null;
   }
 
   try {
@@ -347,7 +459,7 @@ async function callAPIForComments(userPrompt, targetElement) {
       const errorText = await response.text();
       console.error('API 错误:', errorText);
       targetElement.innerHTML = `<p style="color: #ff4757;">API 错误: ${response.status}</p>`;
-      return;
+      return null;
     }
 
     const data = await response.json();
@@ -357,13 +469,11 @@ async function callAPIForComments(userPrompt, targetElement) {
       console.log('AI 返回内容:', content);
       
       try {
-        // 尝试提取 JSON
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const jsonData = JSON.parse(jsonMatch[0]);
           const comments = jsonData.comments || [];
           
-          // 渲染成色块卡片
           const colors = ['#fff5f5', '#f0f9ff', '#f0fdf4'];
           const borderColors = ['#ff4757', '#3b82f6', '#22c55e'];
           
@@ -380,8 +490,8 @@ async function callAPIForComments(userPrompt, targetElement) {
           html += '</div>';
           
           targetElement.innerHTML = html;
+          return comments; // 返回结构化数据用于导出
         } else {
-          // 如果没有找到 JSON，回退到普通显示
           targetElement.innerHTML = content.replace(/\n/g, '<br>');
         }
       } catch (parseError) {
@@ -391,116 +501,12 @@ async function callAPIForComments(userPrompt, targetElement) {
     } else {
       targetElement.innerHTML = '<p style="color: #ff4757;">AI 返回内容为空</p>';
     }
+    return null;
     
   } catch (error) {
     console.error('API 调用失败:', error);
     targetElement.innerHTML = `<p style="color: #ff4757;">请求失败: ${error.message}</p>`;
-  }
-}
-
-// 评论汇总专用 API 调用（返回色块卡片）
-async function callAPIForSummary(userPrompt, targetElement) {
-  console.log('=== 评论汇总 API 调用开始 ===');
-  
-  if (!API_KEY || API_KEY === '在这里填入你的API_KEY') {
-    targetElement.innerHTML = '<p style="color: #ff4757;">请配置 API Key</p>';
-    return;
-  }
-
-  try {
-    targetElement.innerHTML = '<p>正在调用 AI，请稍候...</p>';
-    
-    const response = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          { role: 'system', content: '你是一个专业的内容分析助手。请严格按照用户要求的JSON格式输出，不要添加任何额外的文字说明。' },
-          { role: 'user', content: userPrompt }
-        ],
-        stream: false
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API 错误:', errorText);
-      targetElement.innerHTML = `<p style="color: #ff4757;">API 错误: ${response.status}</p>`;
-      return;
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-    
-    if (content) {
-      console.log('AI 返回内容:', content);
-      
-      try {
-        // 尝试提取 JSON
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const jsonData = JSON.parse(jsonMatch[0]);
-          const sections = jsonData.sections || [];
-          
-          // 渲染成色块卡片
-          const colors = ['#fff5f5', '#f0f9ff', '#f0fdf4', '#fefce8'];
-          const borderColors = ['#ff4757', '#3b82f6', '#22c55e', '#f59e0b'];
-          
-          let html = '<div class="summary-cards">';
-          sections.forEach((item, index) => {
-            // 解析 Markdown 内容
-            let parsedContent = item.content;
-            try {
-              if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
-                parsedContent = marked.parse(item.content);
-              } else if (typeof marked === 'function') {
-                parsedContent = marked(item.content);
-              } else {
-                parsedContent = item.content
-                  .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                  .replace(/\n/g, '<br>');
-              }
-            } catch (e) {
-              parsedContent = item.content.replace(/\n/g, '<br>');
-            }
-            
-            html += `
-              <div class="summary-card" style="background: ${colors[index % 4]}; border-left: 4px solid ${borderColors[index % 4]};">
-                <div class="summary-card-header">${item.icon || '📌'} ${item.title}</div>
-                <div class="summary-card-content">${parsedContent}</div>
-              </div>
-            `;
-          });
-          html += '</div>';
-          
-          targetElement.innerHTML = html;
-        } else {
-          // 如果没有找到 JSON，回退到普通 Markdown 渲染
-          try {
-            if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
-              targetElement.innerHTML = marked.parse(content);
-            } else {
-              targetElement.innerHTML = content.replace(/\n/g, '<br>');
-            }
-          } catch (e) {
-            targetElement.innerHTML = content.replace(/\n/g, '<br>');
-          }
-        }
-      } catch (parseError) {
-        console.error('JSON 解析错误:', parseError);
-        targetElement.innerHTML = content.replace(/\n/g, '<br>');
-      }
-    } else {
-      targetElement.innerHTML = '<p style="color: #ff4757;">AI 返回内容为空</p>';
-    }
-    
-  } catch (error) {
-    console.error('API 调用失败:', error);
-    targetElement.innerHTML = `<p style="color: #ff4757;">请求失败: ${error.message}</p>`;
+    return null;
   }
 }
 
@@ -508,14 +514,11 @@ async function callAPIForSummary(userPrompt, targetElement) {
 function renderMarkdown(content) {
   console.log('开始渲染 Markdown，marked 库状态:', typeof marked);
   
-  // 尝试使用 marked 库
   try {
     if (typeof marked !== 'undefined') {
       if (typeof marked.parse === 'function') {
-        console.log('使用 marked.parse()');
         return marked.parse(content);
       } else if (typeof marked === 'function') {
-        console.log('使用 marked()');
         return marked(content);
       }
     }
@@ -524,46 +527,23 @@ function renderMarkdown(content) {
   }
   
   // Fallback: 手动解析 Markdown
-  console.log('使用手动 Markdown 解析');
   let html = content;
-  
-  // 清理多余的空行
   html = html.replace(/\n{3,}/g, '\n\n');
-  
-  // 处理标题 ## -> <h2>
   html = html.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
   html = html.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
   html = html.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
-  
-  // 处理加粗 **text** -> <strong>
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  
-  // 处理斜体 *text* -> <em>（避免与加粗冲突）
   html = html.replace(/(?<!\*)\*([^\*]+)\*(?!\*)/g, '<em>$1</em>');
-  
-  // 处理无序列表 - item -> <li>
   html = html.replace(/^- (.*?)$/gm, '<li>$1</li>');
-  
-  // 处理有序列表 1. item -> <li>
   html = html.replace(/^\d+\. (.*?)$/gm, '<li>$1</li>');
-  
-  // 包装连续的 <li> 为 <ul>
   html = html.replace(/(<li>.*?<\/li>\n?)+/g, '<ul>$&</ul>');
-  
-  // 清理 <ul> 内的换行
   html = html.replace(/<\/li>\n<li>/g, '</li><li>');
   html = html.replace(/<ul>\n/g, '<ul>');
   html = html.replace(/\n<\/ul>/g, '</ul>');
-  
-  // 处理标题后的换行
   html = html.replace(/<\/h([123])>\n+/g, '</h$1>');
   html = html.replace(/\n+<h([123])>/g, '<h$1>');
-  
-  // 处理剩余的换行为 <br>，但避免连续多个
   html = html.replace(/\n\n+/g, '<br>');
   html = html.replace(/\n/g, '<br>');
-  
-  // 清理多余的 <br>
   html = html.replace(/(<br>){2,}/g, '<br>');
   html = html.replace(/<br>(<h[123]>)/g, '$1');
   html = html.replace(/(<\/h[123]>)<br>/g, '$1');
@@ -573,7 +553,7 @@ function renderMarkdown(content) {
   return html;
 }
 
-// API 调用（非流式，更稳定）
+// API 调用（非流式）
 async function streamAPICall(userPrompt, targetElement) {
   console.log('=== API 调用开始 ===');
   
@@ -597,7 +577,7 @@ async function streamAPICall(userPrompt, targetElement) {
           { role: 'system', content: '你是一个专业的内容分析助手，擅长分析社交媒体内容和用户评论。请用中文回答。' },
           { role: 'user', content: userPrompt }
         ],
-        stream: false  // 使用非流式模式
+        stream: false
       })
     });
 
@@ -617,10 +597,7 @@ async function streamAPICall(userPrompt, targetElement) {
     
     if (content) {
       console.log('AI 返回内容:', content.substring(0, 100));
-      
-      // 渲染 Markdown 内容
       targetElement.innerHTML = renderMarkdown(content);
-      
       console.log('=== API 调用完成 ===');
     } else {
       targetElement.innerHTML = '<p style="color: #ff4757;">AI 返回内容为空</p>';
