@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>生成插件图标</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 { color: #ff4757; }
+    .preview {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 30px 0;
+    }
+    .preview div {
+      text-align: center;
+    }
+    .preview canvas {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .preview p {
+      margin-top: 8px;
+      color: #666;
+      font-size: 14px;
+    }
+    button {
+      background: #ff4757;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px;
+    }
+    button:hover {
+      background: #ff3344;
+    }
+    .instructions {
+      background: #f5f5f5;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: left;
+      margin-top: 30px;
+    }
+    .instructions h3 {
+      margin-top: 0;
+    }
+    .instructions code {
+      background: #e0e0e0;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>📝 小红书评论洞察助手 - 图标生成器</h1>
+  <p>点击下方按钮生成并下载插件图标</p>
+
+  <div class="preview">
+    <div>
+      <canvas id="icon16" width="16" height="16"></canvas>
+      <p>16x16</p>
+    </div>
+    <div>
+      <canvas id="icon48" width="48" height="48"></canvas>
+      <p>48x48</p>
+    </div>
+    <div>
+      <canvas id="icon128" width="128" height="128"></canvas>
+      <p>128x128</p>
+    </div>
+  </div>
+
+  <button onclick="downloadAll()">下载全部图标</button>
+
+  <div class="instructions">
+    <h3>使用说明</h3>
+    <ol>
+      <li>点击"下载全部图标"按钮</li>
+      <li>将下载的 <code>icon16.png</code>、<code>icon48.png</code>、<code>icon128.png</code> 文件放入 <code>icons</code> 文件夹</li>
+      <li>在 Chrome 浏览器中加载插件即可</li>
+    </ol>
+  </div>
+
+  <script>
+    // 绘制图标
+    function drawIcon(canvasId, size) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      
+      // 背景渐变
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#ff4757');
+      gradient.addColorStop(1, '#ff6b7a');
+      
+      // 圆角矩形背景
+      const radius = size * 0.2;
+      ctx.beginPath();
+      ctx.moveTo(radius, 0);
+      ctx.lineTo(size - radius, 0);
+      ctx.quadraticCurveTo(size, 0, size, radius);
+      ctx.lineTo(size, size - radius);
+      ctx.quadraticCurveTo(size, size, size - radius, size);
+      ctx.lineTo(radius, size);
+      ctx.quadraticCurveTo(0, size, 0, size - radius);
+      ctx.lineTo(0, radius);
+      ctx.quadraticCurveTo(0, 0, radius, 0);
+      ctx.closePath();
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      
+      // 绘制笔记图标
+      ctx.fillStyle = 'white';
+      const padding = size * 0.2;
+      const noteWidth = size - padding * 2;
+      const noteHeight = size - padding * 2;
+      
+      // 笔记纸张
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      roundRect(ctx, padding, padding, noteWidth, noteHeight, size * 0.08);
+      ctx.fill();
+      
+      // 文字线条
+      ctx.fillStyle = '#ff4757';
+      const lineHeight = size * 0.08;
+      const lineGap = size * 0.12;
+      const lineX = padding + size * 0.12;
+      const lineWidth = noteWidth - size * 0.24;
+      
+      for (let i = 0; i < 3; i++) {
+        const y = padding + size * 0.2 + i * lineGap;
+        ctx.fillRect(lineX, y, lineWidth * (i === 2 ? 0.6 : 1), lineHeight);
+      }
+      
+      // 小红书标志性的红点
+      ctx.beginPath();
+      ctx.arc(size * 0.75, size * 0.75, size * 0.12, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff4757';
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = size * 0.04;
+      ctx.stroke();
+    }
+    
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+    
+    // 初始化绘制
+    drawIcon('icon16', 16);
+    drawIcon('icon48', 48);
+    drawIcon('icon128', 128);
+    
+    // 下载单个图标
+    function downloadIcon(canvasId, filename) {
+      const canvas = document.getElementById(canvasId);
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+    
+    // 下载全部图标
+    function downloadAll() {
+      downloadIcon('icon16', 'icon16.png');
+      setTimeout(() => downloadIcon('icon48', 'icon48.png'), 100);
+      setTimeout(() => downloadIcon('icon128', 'icon128.png'), 200);
+    }
+  </script>
+</body>
+</html>
