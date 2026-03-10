@@ -64,12 +64,50 @@
       </div>
     </div>
 
+    <!-- 暂存控制区域 -->
+    <div class="save-section">
+      <button id="saveCurrentBtn" class="btn btn-save btn-full" disabled>
+        💾 暂存当前结果
+      </button>
+      <div class="btn-row">
+        <button id="viewSavedBtn" class="btn btn-outline">
+          📋 查看已暂存 (<span id="savedCount">0</span>)
+        </button>
+        <button id="batchExportBtn" class="btn btn-export" disabled>
+          📥 批量导出
+        </button>
+      </div>
+    </div>
+
     <!-- 导出区域 -->
     <div id="exportSection" class="export-section hidden">
       <button id="exportAllBtn" class="btn btn-export btn-full">
-        📥 导出分析结果为 Excel
+        📥 导出当前分析结果为 Excel
       </button>
     </div>
+  </div>
+
+  <!-- 暂存列表模态框 -->
+  <div id="savedModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>已暂存的分析结果</h3>
+        <button id="closeModal" class="close-btn">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="filter-section">
+          <label><input type="checkbox" id="filterComments" checked> 显示精华评论</label>
+          <label><input type="checkbox" id="filterSummaries" checked> 显示汇总分析</label>
+        </div>
+        <div id="savedList" class="saved-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="selectAllBtn" class="btn btn-secondary">全选</button>
+        <button id="exportSelectedBtn" class="btn btn-primary" disabled>导出选中项</button>
+        <button id="clearAllBtn" class="btn btn-danger">清空全部</button>
+      </div>
+    </div>
+  </div>
   </div>
 
   <!-- 配置文件（包含 API Key） -->

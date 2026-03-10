@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>测试数据持久化功能</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .test-section {
+      margin-bottom: 30px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 5px;
+    }
+    .test-section h2 {
+      color: #555;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 5px;
+      border: none;
+      border-radius: 4px;
+      background: #ff4757;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #ff3344;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 10px;
+      padding: 10px;
+      background: #e8f5e9;
+      border-radius: 4px;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+    .error {
+      background: #ffebee;
+      color: #c62828;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      font-size: 14px;
+    }
+    th {
+      background: #f5f5f5;
+      font-weight: bold;
+    }
+    .checkbox-group {
+      margin: 10px 0;
+    }
+    .checkbox-group label {
+      display: inline-block;
+      margin-right: 15px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>小红书评论插件 - 数据持久化功能测试</h1>
+
+    <div class="test-section">
+      <h2>1. 模拟数据生成</h2>
+      <button id="generateTestData">生成测试数据</button>
+      <button id="clearAllData">清空所有数据</button>
+      <div id="generateResult" class="result hidden"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>2. 数据筛选测试</h2>
+      <div class="checkbox-group">
+        <label><input type="checkbox" id="filterCommentsTest" checked> 显示精华评论</label>
+        <label><input type="checkbox" id="filterSummariesTest" checked> 显示汇总分析</label>
+      </div>
+      <button id="applyFilter">应用筛选</button>
+      <button id="showAllData">显示所有数据</button>
+      <div id="filterResult" class="result hidden"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>3. Excel导出测试</h2>
+      <button id="exportSelectedTest">导出选中项（模拟）</button>
+      <button id="exportAllTest">导出所有数据</button>
+      <div id="exportResult" class="result hidden"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>4. 当前存储数据</h2>
+      <button id="refreshData">刷新数据</button>
+      <div id="dataTable"></div>
+    </div>
+  </div>
+
+  <script>
+    // 检查是否有chrome.storage权限
+    if (!chrome || !chrome.storage || !chrome.storage.local) {
+      document.body.innerHTML = '<div class="container"><h1 style="color: red;">错误：无法访问chrome.storage API</h1><p>请确保在Chrome扩展环境中运行此测试页面。</p></div>';
+    }
+
+    // 生成测试数据
+    document.getElementById('generateTestData').addEventListener('click', async () => {
+      try {
+        const testData = [
+          {
+            id: Date.now() + Math.random(),
+            noteTitle: '小红书美食探店｜这家火锅真的太香了！',
+            noteUrl: 'https://www.xiaohongshu.com/explore/123456',
+            type: 'comment',
+            commentContent: '这家火锅真的太好吃了！我上周刚去过，排队等了两个小时但非常值得。特别推荐他们的毛肚和鸭血。',
+            commentValue: '具体推荐菜品',
+            savedAt: new Date().toISOString()
+          },
+          {
+            id: Date.now() + Math.random(),
+            noteTitle: '小红书美食探店｜这家火锅真的太香了！',
+            noteUrl: 'https://www.xiaohongshu.com/explore/123456',
+            type: 'comment',
+            commentContent: '价格有点贵，但是食材很新鲜，服务也很好。环境装修很有特色，适合拍照。',
+            commentValue: '价格与环境评价',
+            savedAt: new Date(Date.now() - 3600000).toISOString()
+          },
+          {
+            id: Date.now() + Math.random(),
+            noteTitle: '小红书美食探店｜这家火锅真的太香了！',
+            noteUrl: 'https://www.xiaohongshu.com/explore/123456',
+            type: 'summary',
+            summaryContent: '## 🎯 核心话题\n这家火锅店的用餐体验分享\n\n## 💬 用户观点\n大部分用户对这家火锅店评价很高，认为食材新鲜、味道好。有用户提到**排队时间较长**，但普遍认为值得等待。\n\n## 💡 有价值信息\n- 推荐菜品：毛肚、鸭血\n- 价格偏高但食材新鲜\n- 环境装修有特色，适合拍照\n- 服务质量很好\n\n## ⚡ 争议点\n部分用户认为价格偏高，但多数认为性价比合理。',
+            savedAt: new Date(Date.now() - 7200000).toISOString()
+          },
+          {
+            id: Date.now() + Math.random(),
+            noteTitle: '护肤心得｜敏感肌如何度过换季期',
+            noteUrl: 'https://www.xiaohongshu.com/explore/789012',
+            type: 'comment',
+            commentContent: '我是敏感肌，每到换季就过敏。看了博主的分享很有用，特别是关于保湿霜的选择。',
+            commentValue: '敏感肌共鸣',
+            savedAt: new Date(Date.now() - 86400000).toISOString()
+          }
+        ];
+
+        await chrome.storage.local.set({ savedItems: testData });
+        document.getElementById('generateResult').classList.remove('hidden', 'error');
+        document.getElementById('generateResult').textContent = `成功生成 ${testData.length} 条测试数据！`;
+        refreshDataDisplay();
+      } catch (error) {
+        document.getElementById('generateResult').classList.remove('hidden');
+        document.getElementById('generateResult').classList.add('error');
+        document.getElementById('generateResult').textContent = `错误: ${error.message}`;
+      }
+    });
+
+    // 清空数据
+    document.getElementById('clearAllData').addEventListener('click', async () => {
+      if (confirm('确定要清空所有数据吗？')) {
+        try {
+          await chrome.storage.local.set({ savedItems: [] });
+          document.getElementById('generateResult').classList.remove('hidden', 'error');
+          document.getElementById('generateResult').textContent = '已清空所有数据';
+          refreshDataDisplay();
+        } catch (error) {
+          document.getElementById('generateResult').classList.remove('hidden');
+          document.getElementById('generateResult').classList.add('error');
+          document.getElementById('generateResult').textContent = `错误: ${error.message}`;
+        }
+      }
+    });
+
+    // 刷新数据显示
+    async function refreshDataDisplay() {
+      try {
+        const { savedItems = [] } = await chrome.storage.local.get('savedItems');
+        const tableHtml = `
+          <table>
+            <thead>
+              <tr>
+                <th>标题</th>
+                <th>类型</th>
+                <th>内容预览</th>
+                <th>保存时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${savedItems.map(item => `
+                <tr>
+                  <td>${item.noteTitle.substring(0, 30)}${item.noteTitle.length > 30 ? '...' : ''}</td>
+                  <td>${item.type === 'comment' ? '💎 评论' : '📊 汇总'}</td>
+                  <td>${getItemPreview(item)}</td>
+                  <td>${formatTime(item.savedAt)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        document.getElementById('dataTable').innerHTML = tableHtml;
+      } catch (error) {
+        document.getElementById('dataTable').innerHTML = `<p class="error">错误: ${error.message}</p>`;
+      }
+    }
+
+    document.getElementById('refreshData').addEventListener('click', refreshDataDisplay);
+
+    // 应用筛选
+    document.getElementById('applyFilter').addEventListener('click', async () => {
+      try {
+        const { savedItems = [] } = await chrome.storage.local.get('savedItems');
+        const showComments = document.getElementById('filterCommentsTest').checked;
+        const showSummaries = document.getElementById('filterSummariesTest').checked;
+
+        const filtered = savedItems.filter(item => {
+          if (item.type === 'comment' && !showComments) return false;
+          if (item.type === 'summary' && !showSummaries) return false;
+          return true;
+        });
+
+        document.getElementById('filterResult').classList.remove('hidden', 'error');
+        document.getElementById('filterResult').textContent = `筛选结果: ${filtered.length}/${savedItems.length} 条数据`;
+      } catch (error) {
+        document.getElementById('filterResult').classList.remove('hidden');
+        document.getElementById('filterResult').classList.add('error');
+        document.getElementById('filterResult').textContent = `错误: ${error.message}`;
+      }
+    });
+
+    // 显示所有数据
+    document.getElementById('showAllData').addEventListener('click', () => {
+      document.getElementById('filterCommentsTest').checked = true;
+      document.getElementById('filterSummariesTest').checked = true;
+      document.getElementById('applyFilter').click();
+    });
+
+    // 导出测试
+    document.getElementById('exportSelectedTest').addEventListener('click', async () => {
+      document.getElementById('exportResult').classList.remove('hidden', 'error');
+      document.getElementById('exportResult').textContent = '模拟导出: 将生成Excel文件，包含选中的数据项...';
+
+      // 这里可以添加实际的Excel生成逻辑
+      try {
+        const { savedItems = [] } = await chrome.storage.local.get('savedItems');
+        if (savedItems.length === 0) {
+          throw new Error('没有数据可导出');
+        }
+
+        // 模拟生成Excel数据格式
+        const excelData = [
+          ['笔记标题', '评论内容/汇总', '价值点', '类型', '保存时间', '笔记链接']
+        ];
+
+        // 添加前3条数据作为示例
+        savedItems.slice(0, 3).forEach(item => {
+          if (item.type === 'comment') {
+            excelData.push([
+              item.noteTitle,
+              item.commentContent,
+              item.commentValue,
+              '精华评论',
+              new Date(item.savedAt).toLocaleString('zh-CN'),
+              item.noteUrl
+            ]);
+          }
+        });
+
+        document.getElementById('exportResult').textContent = `Excel格式预览:\n${JSON.stringify(excelData, null, 2)}`;
+      } catch (error) {
+        document.getElementById('exportResult').classList.add('error');
+        document.getElementById('exportResult').textContent = `错误: ${error.message}`;
+      }
+    });
+
+    document.getElementById('exportAllTest').addEventListener('click', async () => {
+      document.getElementById('exportResult').classList.remove('hidden', 'error');
+      document.getElementById('exportResult').textContent = '模拟导出: 将生成包含所有数据的Excel文件...';
+
+      try {
+        const { savedItems = [] } = await chrome.storage.local.get('savedItems');
+        document.getElementById('exportResult').textContent = `准备导出 ${savedItems.length} 条数据到Excel文件`;
+      } catch (error) {
+        document.getElementById('exportResult').classList.add('error');
+        document.getElementById('exportResult').textContent = `错误: ${error.message}`;
+      }
+    });
+
+    // 辅助函数
+    function getItemPreview(item) {
+      if (item.type === 'comment') {
+        return `${item.commentContent.substring(0, 50)}${item.commentContent.length > 50 ? '...' : ''}`;
+      } else if (item.type === 'summary') {
+        const lines = item.summaryContent.split('\n').filter(line => line.trim());
+        return lines[0]?.substring(0, 50) + '...' || '汇总内容';
+      }
+      return '';
+    }
+
+    function formatTime(isoString) {
+      const date = new Date(isoString);
+      const now = new Date();
+      const diff = now - date;
+
+      if (diff < 60000) return '刚刚';
+      if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`;
+      if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`;
+      return date.toLocaleString('zh-CN', { month: 'short', day: 'numeric' });
+    }
+
+    // 初始化
+    refreshDataDisplay();
+  </script>
+</body>
+</html>
