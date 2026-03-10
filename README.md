@@ -5,10 +5,13 @@
 ## 功能特点
 
 - 📌 **笔记标题提取**：一键提取当前笔记的标题
-- 💎 **精华评论筛选**：AI 从前 10 条评论中筛选出最有价值的 3 条，以卡片形式展示
+- 💎 **精华评论筛选**：AI 从前 20 条评论中筛选出最有价值的 3 条，以卡片形式展示
 - 📊 **评论汇总分析**：AI 分析评论区内容，从核心话题、用户观点、有价值信息、争议点四个维度进行总结
 - 🎨 **Markdown 渲染**：完美显示格式化内容，支持标题、加粗、列表等
 - ⚡ **即开即用**：无需刷新页面，打开侧边栏即可使用
+- 💾 **数据暂存**：支持暂存多篇笔记的分析结果，本地持久化存储（最大100条）
+- 📤 **批量导出**：支持选择多个分析结果批量导出为Excel格式
+- 🗑️ **数据管理**：可视化界面管理暂存数据，支持筛选、删除、清空等操作
 
 ## 效果预览
 <p align="center">
@@ -63,16 +66,37 @@ const API_KEY = '在这里填入你的API_KEY';
 | 按钮 | 功能说明 |
 |-----|---------|
 | 📌 **笔记标题** | 提取并显示当前笔记的标题 |
-| 💎 **精华评论** | AI 从前 10 条评论中筛选最有价值的 3 条，展示评论内容和价值点 |
+| 💎 **精华评论** | AI 从前 20 条评论中筛选最有价值的 3 条，展示评论内容和价值点 |
 | 📊 **评论汇总** | AI 分析评论区，生成核心话题、用户观点、有价值信息、争议点的汇总 |
 
 ## 界面预览
 
 插件侧边栏包含：
 - **顶部标题**：小红书评论总结 (DeepSeek · AI分析)
-- **功能按钮区**：三个功能按钮
+- **功能按钮区**：笔记标题、精华评论、评论汇总三个主要功能按钮
+- **数据管理区**：暂存当前结果、查看已存数据、导出选中数据、清空全部数据
 - **状态提示**：显示当前操作状态
 - **结果展示区**：展示提取和分析的内容
+
+## 数据管理功能
+
+### 数据暂存
+- 点击「暂存当前结果」可保存当前的分析结果
+- 支持分别暂存精华评论和汇总分析
+- 数据本地存储，关闭插件后仍然保留
+- 最多支持暂存100条数据
+
+### 数据查看与管理
+- 点击「查看已存数据」打开数据管理界面
+- 显示所有暂存的数据列表，包含笔记标题、类型、保存时间
+- 支持按类型筛选（全部/精华评论/汇总分析）
+- 支持单条删除和全部清空操作
+
+### 批量导出
+- 在数据管理界面选择要导出的数据
+- 点击「导出选中数据」生成Excel文件
+- 支持「导出全部数据」一键导出所有暂存数据
+- Excel格式优化，一行一条记录，便于数据处理和分析
 
 ## 文件结构
 
@@ -85,20 +109,29 @@ xhs_comment_insight/
 ├── sidepanel.css        # 侧边栏样式
 ├── sidepanel.js         # 侧边栏逻辑与 API 调用
 ├── lib/
-│   └── marked.min.js    # Markdown 渲染库
+│   ├── marked.min.js    # Markdown 渲染库
+│   └── xlsx.full.min.js # Excel 导出库
 ├── icons/               # 图标文件夹
 │   ├── generate-icons.html  # 图标生成工具
 │   ├── icon16.png       # 16x16 图标
 │   ├── icon48.png       # 48x48 图标
 │   └── icon128.png      # 128x128 图标
+├── image_preview/       # 预览图片
+├── config.js            # API 配置文件（被 gitignore）
+├── config.example.js    # API 配置示例文件
+├── test_data_persistence.html  # 数据持久化测试页面
+├── CHANGELOG.md         # 更新日志
+├── README_NEW_FEATURES.md # 新功能说明
 └── README.md            # 说明文档
 ```
 
 ## 技术说明
 
-- **Chrome API**: Side Panel API, Tabs API, Scripting API
+- **Chrome API**: Side Panel API, Tabs API, Scripting API, Storage API, Downloads API
 - **AI 模型**: DeepSeek Chat (deepseek-chat)
 - **Markdown 渲染**: marked.js
+- **Excel 导出**: xlsx.js
+- **数据存储**: Chrome Storage API（本地持久化）
 - **最低 Chrome 版本**: 114+
 
 ## 注意事项
@@ -119,10 +152,27 @@ A: 请确保当前笔记有评论，且评论区已加载完成。
 **Q: API 调用失败？**  
 A: 请检查 `sidepanel.js` 中的 API Key 是否正确配置，以及网络是否正常。
 
-**Q: 精华评论或汇总内容为空？**  
+**Q: 精华评论或汇总内容为空？**
 A: 可能是 API 返回异常，请打开浏览器开发者工具查看控制台日志。
 
+**Q: 数据暂存功能无法使用？**
+A: 请检查浏览器是否允许插件使用存储权限，或尝试重新加载插件。
+
+**Q: 导出Excel失败？**
+A: 请确保已选择要导出的数据，并检查浏览器下载权限设置。
+
+**Q: 已暂存的数据消失了？**
+A: Chrome存储空间可能已满，建议定期导出重要数据。暂存数据最多支持100条。
+
 ## 更新日志
+
+### v2.0.0（最新版本）
+- 新增数据暂存功能，支持保存多篇笔记分析结果
+- 新增批量导出功能，支持选择多个结果导出为Excel
+- 新增数据管理界面，支持查看、筛选、删除暂存数据
+- 集成Chrome Storage API实现数据持久化存储
+- 优化精华评论筛选逻辑（从前20条中筛选3条）
+- 更新UI界面，新增数据管理区域
 
 ### v1.0.0
 - 初始版本发布
@@ -144,7 +194,7 @@ A Chrome browser extension powered by DeepSeek AI that helps you quickly extract
 ## Features
 
 - 📌 **Note Title Extraction**: One-click extraction of the current note's title
-- 💎 **Key Comments Selection**: AI selects the 3 most valuable comments from the top 10, displayed as cards
+- 💎 **Key Comments Selection**: AI selects the 3 most valuable comments from the top 20, displayed as cards
 - 📊 **Comment Summary Analysis**: AI analyzes comment section content from four dimensions: core topic, user opinions, valuable information, and controversy points
 - 🎨 **Markdown Rendering**: Perfect display of formatted content, supporting headings, bold text, lists, etc.
 - ⚡ **Ready to Use**: No page refresh needed, just open the sidebar and start using
@@ -202,7 +252,7 @@ To get an API Key:
 | Button | Description |
 |--------|-------------|
 | 📌 **Note Title** | Extract and display the current note's title |
-| 💎 **Key Comments** | AI selects the 3 most valuable comments from top 10, showing content and value points |
+| 💎 **Key Comments** | AI selects the 3 most valuable comments from top 20, showing content and value points |
 | 📊 **Comment Summary** | AI analyzes the comment section, generating summary of core topic, user opinions, valuable info, and controversy |
 
 ## Interface Preview
